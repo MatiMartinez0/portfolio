@@ -94,7 +94,7 @@ function initializeGSAP() {
 //     }
 // });
 
-    // Configurar ScrollTriggers para cada sección
+    // sonfigurar ScrollTriggers para cada seccion
     const sections = document.querySelectorAll('.timeline-section[data-section]');
     
     sections.forEach((section, index) => {
@@ -102,7 +102,7 @@ function initializeGSAP() {
         const yearMarker = section.querySelector('.year-marker');
         const contentBox = section.querySelector('.content-box');
         
-        // ScrollTrigger principal para cada sección
+        // scrollTrigger principal para cada seccion
         ScrollTrigger.create({
             trigger: section,
             start: "top 70%",
@@ -110,7 +110,7 @@ function initializeGSAP() {
             onEnter: () => {
                 console.log(`Entrando a sección: ${sectionData}`);
                 handleSectionEnter(section, sectionData);
-                updateAvatarPosition(section); // AGREGAR ESTA LÍNEA
+                updateAvatarPosition(section);
             },
             onLeave: () => {
                 handleSectionLeave(section, sectionData);
@@ -118,14 +118,14 @@ function initializeGSAP() {
             onEnterBack: () => {
                 console.log(`Volviendo a sección: ${sectionData}`);
                 handleSectionEnter(section, sectionData);
-                updateAvatarPosition(section); // AGREGAR ESTA LÍNEA
+                updateAvatarPosition(section);
             },
             onLeaveBack: () => {
                 handleSectionLeave(section, sectionData);
             }
         });
 
-        // Animar year markers con mejor posicionamiento
+        // Animacion de year markers con mejor posicionamiento
         if (yearMarker && sectionData !== 'intro') {
             gsap.set(yearMarker, { opacity: 0, scale: 0.5 });
             
@@ -159,6 +159,8 @@ function initializeGSAP() {
         }
     });
     setupScrollBasedMovement();
+    setupWalkingOnScroll();
+    setupWalkingOnScroll();
     setTimeout(() => {
         const firstSection = document.querySelector('.timeline-section[data-section="intro"]');
         if (firstSection) {
@@ -196,44 +198,155 @@ function setupScrollBasedMovement() {
     });
 }
 
+function setupWalkingOnScroll() {
+    let lastScrollY = window.scrollY;
+    let isScrolling = false;
+    let scrollTimeout;
+    
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+        const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
+        
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
+        
+        // Solo mover avatar si estamos en una sección válida
+        if (window.avatarWalkingData && currentSection) {
+            const walkData = window.avatarWalkingData;
+            const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+            
+            // Calcular nueva posición horizontal basada en scroll
+            let newLeft = walkData.currentLeft;
+            
+            if (scrollDirection === 'down') {
+                // Scrolling hacia abajo - caminar según dirección de la sección
+                if (walkData.direction === 'right') {
+                    newLeft = Math.min(newLeft + (scrollDelta * 0.5), walkData.rightBound);
+                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'right');
+                } else {
+                    newLeft = Math.max(newLeft - (scrollDelta * 0.5), walkData.leftBound);
+                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'left');
+                }
+            } else {
+                // Scrolling hacia arriba - caminar en dirección opuesta
+                if (walkData.direction === 'right') {
+                    newLeft = Math.max(newLeft - (scrollDelta * 0.5), walkData.leftBound);
+                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'left');
+                } else {
+                    newLeft = Math.min(newLeft + (scrollDelta * 0.5), walkData.rightBound);
+                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'right');
+                }
+            }
+            
+            // Actualizar posición
+            walkData.currentLeft = newLeft;
+            
+            gsap.set(avatar, {
+                left: newLeft + 'px',
+                top: walkData.baseTop
+            });
+        }
+        
+        lastScrollY = currentScrollY;
+        
+        // Detener walking después de que pare el scroll
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+            if (currentSection) {
+                changeAvatarState(AvatarStates.IDLE, currentSection);
+            }
+        }, 150);
+    });
+}
+
+function updateWalkingDirection() {
+    if (!currentSection) return;
+    
+    // Forzar actualización del sprite según dirección de scroll
+    const direction = scrollDirection === 'down' ? 'right' : 'left';
+    const spriteKey = `walking_${direction}`;
+    
+    if (spriteImages[spriteKey]) {
+        avatarSprite.style.backgroundImage = `url(${spriteImages[spriteKey]})`;
+    }
+}
+
 function updateAvatarPosition(section) {
     if (!section) return;
     
-    const sectionRect = section.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
     const contentBox = section.querySelector('.content-box');
+    if (!contentBox) return;
     
-    // Calcular posición vertical más inteligente
-    let newTop;
-    if (sectionRect.top > windowHeight || sectionRect.bottom < 0) {
-        // Si la sección no está visible, usar una posición estimada
-        const minTop = windowHeight * 0.3;
-        const maxTop = windowHeight * 0.6;
-        newTop = minTop + Math.random() * (maxTop - minTop);
+    const boxRect = contentBox.getBoundingClientRect();
+    const avatarHeight = 120; // Altura del avatar
+    
+    // Posicionar exactamente sobre el borde superior del content-box
+    const targetTop = (boxRect.top - avatarHeight/2) + 'px';
+    
+    // Posición horizontal según el tipo de content-box
+    let targetLeft;
+    if (contentBox.classList.contains('left-content')) {
+        // Para content-box izquierdo, avatar empieza del lado izquierdo
+        targetLeft = (boxRect.left + 50) + 'px';
+    } else if (contentBox.classList.contains('right-content')) {
+        // Para content-box derecho, avatar empieza del lado derecho
+        targetLeft = (boxRect.right - 50) + 'px';
     } else {
-        // Si está visible, usar el centro de la sección
-        const sectionCenter = sectionRect.top + (sectionRect.height / 2);
-        const minTop = windowHeight * 0.2;
-        const maxTop = windowHeight * 0.7;
-        newTop = Math.max(minTop, Math.min(maxTop, sectionCenter));
+        // Center content
+        targetLeft = (boxRect.left + boxRect.width/2) + 'px';
     }
     
-    // Posición horizontal según el contenido
-    let horizontalPosition = '50%';
-    if (contentBox) {
-        if (contentBox.classList.contains('left-content')) {
-            horizontalPosition = '25%';
-        } else if (contentBox.classList.contains('right-content')) {
-            horizontalPosition = '75%';
-        }
-    }
+    // Guardar posición de referencia para walking
+    window.avatarWalkingData = {
+        section: section,
+        baseTop: targetTop,
+        leftBound: boxRect.left + 30,
+        rightBound: boxRect.right - 30,
+        currentLeft: parseFloat(targetLeft),
+        direction: contentBox.classList.contains('left-content') ? 'right' : 'left'
+    };
     
-    // Animar suavemente a la nueva posición
+    // Animar a la posición con jumping
+    changeAvatarState(AvatarStates.JUMPING, section);
+    
     gsap.to(avatar, {
-        top: newTop + 'px',
-        left: horizontalPosition,
+        position: 'fixed',
+        top: targetTop,
+        left: targetLeft,
         duration: 0.8,
-        ease: "power2.out"
+        ease: "power2.out",
+        onComplete: () => {
+            // Cambiar a walking cuando llegue
+            changeAvatarState(AvatarStates.WALKING, section);
+        }
+    });
+}
+
+function changeAvatarStateWithDirection(newState, direction) {
+    const spriteKey = `${newState}_${direction}`;
+    
+    gsap.to(avatarSprite, {
+        scale: 0.9,
+        duration: 0.15,
+        ease: "power2.in",
+        onComplete: () => {
+            // Remover todas las clases de estado
+            Object.values(AvatarStates).forEach(state => {
+                avatarSprite.classList.remove(state);
+            });
+            
+            avatarSprite.classList.add(newState);
+            
+            const spriteUrl = spriteImages[spriteKey] || spriteImages.default;
+            avatarSprite.style.backgroundImage = `url(${spriteUrl})`;
+            
+            // Animación de entrada
+            gsap.to(avatarSprite, {
+                scale: 1,
+                duration: 0.2,
+                ease: "back.out(1.7)"
+            });
+        }
     });
 }
 
@@ -444,6 +557,50 @@ function setupInteractions() {
                 ease: "power2.out"
             });
     });
+    
+    // Hover en achievement items para hanging
+    document.addEventListener('mouseenter', function(e) {
+        if (e.target.closest('.achievement-list li')) {
+            const achievementItem = e.target.closest('.achievement-list li');
+            const itemRect = achievementItem.getBoundingClientRect();
+            const avatarHeight = 120;
+            
+            // Posicionar avatar colgando del borde derecho del logro
+            const targetTop = (itemRect.top - avatarHeight/2) + 'px';
+            const targetLeft = (itemRect.right - 40) + 'px'; // Un poco dentro del borde derecho
+            
+            gsap.to(avatar, {
+                top: targetTop,
+                left: targetLeft,
+                duration: 0.4,
+                ease: "power2.out",
+                onComplete: () => {
+                    changeAvatarState(AvatarStates.HANGING, currentSection);
+                    updateTooltip('¡Colgándome de este logro!');
+                }
+            });
+        }
+    }, true);
+
+    document.addEventListener('mouseleave', function(e) {
+        if (e.target.closest('.achievement-list li')) {
+            // Volver a la posición de walking después de un delay
+            setTimeout(() => {
+                if (window.avatarWalkingData && currentSection) {
+                    // Restaurar a la posición de walking
+                    gsap.to(avatar, {
+                        top: window.avatarWalkingData.baseTop,
+                        left: window.avatarWalkingData.currentLeft + 'px',
+                        duration: 0.5,
+                        ease: "power2.out",
+                        onComplete: () => {
+                            changeAvatarState(AvatarStates.IDLE, currentSection);
+                        }
+                    });
+                }
+            }, 200);
+        }
+    }, true);
 
     // Hover en avatar
     avatar.addEventListener('mouseenter', function() {
@@ -477,35 +634,117 @@ function setupInteractions() {
     }, 3000);
 }
 
+function returnToWalkingPosition() {
+    if (window.avatarWalkingData && currentSection) {
+        gsap.to(avatar, {
+            top: window.avatarWalkingData.baseTop,
+            left: window.avatarWalkingData.currentLeft + 'px',
+            duration: 0.6,
+            ease: "power2.out",
+            onComplete: () => {
+                changeAvatarState(AvatarStates.IDLE, currentSection);
+            }
+        });
+    }
+}
+
 function handleTechTagClick(tag) {
     const techName = tag.textContent;
+    const tagRect = tag.getBoundingClientRect();
+    const contentBox = tag.closest('.content-box');
     
-    // Avatar reacciona al tech tag
-    changeAvatarState(AvatarStates.IDLE);
-    updateTooltip(`¡${techName} desbloqueado! 🎉`);
+    // Calcular posición más precisa
+    let avatarTop, avatarLeft, direction;
     
-    // Efecto visual mejorado
+    // Posición vertical: un poco arriba del tech tag
+    avatarTop = (tagRect.top - 80) + 'px';
+    
+    // Determinar dirección y posición horizontal según ubicación del content-box
+    if (contentBox.classList.contains('left-content')) {
+        // Content-box a la izquierda, avatar mira hacia la derecha (hacia los tags)
+        avatarLeft = (tagRect.left - 100) + 'px';
+        direction = 'right';
+    } else if (contentBox.classList.contains('right-content')) {
+        // Content-box a la derecha, avatar mira hacia la izquierda (hacia los tags)
+        avatarLeft = (tagRect.right + 50) + 'px';
+        direction = 'left';
+    } else {
+        // Content centrado
+        avatarLeft = (tagRect.left - 80) + 'px';
+        direction = 'right';
+    }
+    
+    // Animar avatar al tech tag
+    gsap.to(avatar, {
+        top: avatarTop,
+        left: avatarLeft,
+        duration: 0.6,
+        ease: "power2.out",
+        onComplete: () => {
+            changeAvatarStateWithDirection(AvatarStates.IDLE, direction);
+            updateTooltipWithBubble(techName, getTechDescription(techName));
+        }
+    });
+    
+    // Efecto visual del tag
     gsap.timeline()
         .to(tag, {
-            scale: 1.2,
-            rotation: 5,
+            scale: 1.15,
             duration: 0.2,
             ease: "power2.out"
         })
         .to(tag, {
             scale: 1,
-            rotation: 0,
             duration: 0.3,
             ease: "back.out(1.7)"
         });
+}
+
+function getTechDescription(techName) {
+    const descriptions = {
+        'pseint': 'Mi primer lenguaje de programación para aprender algoritmos',
+        'html': 'La base de toda página web',
+        'css': 'Para hacer que las páginas se vean increíbles',
+        'javascript': 'El lenguaje que da vida a las páginas',
+        'java': 'Mi introducción a la programación orientada a objetos',
+        'wordpress': 'CMS que me abrió las puertas al mundo profesional',
+        //agregar mas
+    };
+    return descriptions[techName] || `¡${techName} desbloqueado!`;
+}
+
+function updateTooltipWithBubble(title, description) {
+    const bubbleContent = `
+        <div class="bubble-title">${title}</div>
+        <div class="bubble-text">${description}</div>
+    `;
     
-    // Avatar celebra
-    gsap.to(avatar, {
-        y: -8,
-        duration: 0.25,
-        yoyo: true,
-        repeat: 1,
-        ease: "power2.out"
+    gsap.to(tooltip, {
+        opacity: 0,
+        y: 5,
+        duration: 0.2,
+        ease: "power2.in",
+        onComplete: () => {
+            tooltip.innerHTML = bubbleContent;
+            gsap.to(tooltip, {
+                opacity: 1,
+                y: 0,
+                duration: 0.4,
+                ease: "power2.out"
+            });
+            
+            // Auto-ocultar y retornar a posición después de 4 segundos
+            gsap.to(tooltip, {
+                opacity: 0,
+                duration: 0.3,
+                delay: 4,
+                ease: "power2.in",
+                onComplete: () => {
+                    // Retornar a posición de walking
+                    setTimeout(returnToWalkingPosition, 500);
+                }
+            });
+        }
     });
 }
 
