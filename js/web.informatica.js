@@ -7,6 +7,7 @@ let avatarSprite;
 let tooltip;
 let currentSection = null;
 let collectedTechs = new Set();
+let isHangingOnAchievement = false;
 
 // Estados del avatar
 const AvatarStates = {
@@ -158,9 +159,6 @@ function initializeGSAP() {
             });
         }
     });
-    setupScrollBasedMovement();
-    setupWalkingOnScroll();
-    setupWalkingOnScroll();
     setTimeout(() => {
         const firstSection = document.querySelector('.timeline-section[data-section="intro"]');
         if (firstSection) {
@@ -169,155 +167,51 @@ function initializeGSAP() {
     }, 100);
 }
 
-function setupScrollBasedMovement() {
-    ScrollTrigger.create({
-        trigger: ".timeline-container",
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => {
-            const progress = self.progress;
-            const sections = document.querySelectorAll('.timeline-section[data-section]');
-            const totalSections = sections.length;
-            
-            // Determinar sección actual con mejor lógica
-            const currentIndex = Math.min(
-                Math.floor(progress * totalSections), 
-                totalSections - 1
-            );
-            const targetSection = sections[currentIndex];
-            
-            // Solo actualizar si cambió de sección y después de un pequeño delay
-            if (targetSection && targetSection !== window.lastActiveSection) {
-                clearTimeout(window.avatarMoveTimeout);
-                window.avatarMoveTimeout = setTimeout(() => {
-                    window.lastActiveSection = targetSection;
-                    updateAvatarPosition(targetSection);
-                }, 100); // 100ms de delay para evitar actualizaciones excesivas
-            }
-        }
-    });
-}
-
-function setupWalkingOnScroll() {
-    let lastScrollY = window.scrollY;
-    let isScrolling = false;
-    let scrollTimeout;
-    
-    window.addEventListener('scroll', () => {
-        const currentScrollY = window.scrollY;
-        const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
-        
-        isScrolling = true;
-        clearTimeout(scrollTimeout);
-        
-        // Solo mover avatar si estamos en una sección válida
-        if (window.avatarWalkingData && currentSection) {
-            const walkData = window.avatarWalkingData;
-            const scrollDelta = Math.abs(currentScrollY - lastScrollY);
-            
-            // Calcular nueva posición horizontal basada en scroll
-            let newLeft = walkData.currentLeft;
-            
-            if (scrollDirection === 'down') {
-                // Scrolling hacia abajo - caminar según dirección de la sección
-                if (walkData.direction === 'right') {
-                    newLeft = Math.min(newLeft + (scrollDelta * 0.5), walkData.rightBound);
-                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'right');
-                } else {
-                    newLeft = Math.max(newLeft - (scrollDelta * 0.5), walkData.leftBound);
-                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'left');
-                }
-            } else {
-                // Scrolling hacia arriba - caminar en dirección opuesta
-                if (walkData.direction === 'right') {
-                    newLeft = Math.max(newLeft - (scrollDelta * 0.5), walkData.leftBound);
-                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'left');
-                } else {
-                    newLeft = Math.min(newLeft + (scrollDelta * 0.5), walkData.rightBound);
-                    changeAvatarStateWithDirection(AvatarStates.WALKING, 'right');
-                }
-            }
-            
-            // Actualizar posición
-            walkData.currentLeft = newLeft;
-            
-            gsap.set(avatar, {
-                left: newLeft + 'px',
-                top: walkData.baseTop
-            });
-        }
-        
-        lastScrollY = currentScrollY;
-        
-        // Detener walking después de que pare el scroll
-        scrollTimeout = setTimeout(() => {
-            isScrolling = false;
-            if (currentSection) {
-                changeAvatarState(AvatarStates.IDLE, currentSection);
-            }
-        }, 150);
-    });
-}
-
-function updateWalkingDirection() {
-    if (!currentSection) return;
-    
-    // Forzar actualización del sprite según dirección de scroll
-    const direction = scrollDirection === 'down' ? 'right' : 'left';
-    const spriteKey = `walking_${direction}`;
-    
-    if (spriteImages[spriteKey]) {
-        avatarSprite.style.backgroundImage = `url(${spriteImages[spriteKey]})`;
-    }
-}
-
 function updateAvatarPosition(section) {
     if (!section) return;
     
+    // Cancelar animaciones previas PRIMERO
+    gsap.killTweensOf(avatar);
+    gsap.killTweensOf(avatarSprite);
+
     const contentBox = section.querySelector('.content-box');
     if (!contentBox) return;
     
     const boxRect = contentBox.getBoundingClientRect();
-    const avatarHeight = 120; // Altura del avatar
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const avatarHeight = 120;
     
-    // Posicionar exactamente sobre el borde superior del content-box
-    const targetTop = (boxRect.top - avatarHeight/2) + 'px';
+    // Coordenadas absolutas respecto al documento
+    const absoluteTop = boxRect.top + scrollTop - avatarHeight/2;
     
-    // Posición horizontal según el tipo de content-box
+    // Posición horizontal según tipo de content-box
     let targetLeft;
     if (contentBox.classList.contains('left-content')) {
-        // Para content-box izquierdo, avatar empieza del lado izquierdo
-        targetLeft = (boxRect.left + 50) + 'px';
+        targetLeft = boxRect.left + boxRect.width - 80;
     } else if (contentBox.classList.contains('right-content')) {
-        // Para content-box derecho, avatar empieza del lado derecho
-        targetLeft = (boxRect.right - 50) + 'px';
+        targetLeft = boxRect.left + 80;
     } else {
-        // Center content
-        targetLeft = (boxRect.left + boxRect.width/2) + 'px';
+        targetLeft = boxRect.left + boxRect.width/2;
     }
     
-    // Guardar posición de referencia para walking
-    window.avatarWalkingData = {
-        section: section,
-        baseTop: targetTop,
-        leftBound: boxRect.left + 30,
-        rightBound: boxRect.right - 30,
-        currentLeft: parseFloat(targetLeft),
-        direction: contentBox.classList.contains('left-content') ? 'right' : 'left'
+    // Guardar posición actual para otras funciones
+    window.currentAvatarPosition = {
+        top: absoluteTop,
+        left: targetLeft,
+        section: section
     };
     
-    // Animar a la posición con jumping
+    // Animar con jumping
     changeAvatarState(AvatarStates.JUMPING, section);
     
     gsap.to(avatar, {
-        position: 'fixed',
-        top: targetTop,
-        left: targetLeft,
+        position: 'absolute',
+        top: absoluteTop + 'px',
+        left: targetLeft + 'px',
         duration: 0.8,
         ease: "power2.out",
         onComplete: () => {
-            // Cambiar a walking cuando llegue
-            changeAvatarState(AvatarStates.WALKING, section);
+            changeAvatarState(AvatarStates.IDLE, section);
         }
     });
 }
@@ -558,20 +452,31 @@ function setupInteractions() {
             });
     });
     
-    // Hover en achievement items para hanging
+        // Hover en achievement items para hanging
     document.addEventListener('mouseenter', function(e) {
-        if (e.target.closest('.achievement-list li')) {
+        if (e.target.closest('.achievement-list li') && !isHangingOnAchievement) {
+            isHangingOnAchievement = true;
+            
             const achievementItem = e.target.closest('.achievement-list li');
             const itemRect = achievementItem.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             const avatarHeight = 120;
             
-            // Posicionar avatar colgando del borde derecho del logro
-            const targetTop = (itemRect.top - avatarHeight/2) + 'px';
-            const targetLeft = (itemRect.right - 40) + 'px'; // Un poco dentro del borde derecho
+            // Posición absoluta del logro
+            const itemAbsoluteTop = itemRect.top + scrollTop;
+            
+            const targetTop = itemAbsoluteTop - avatarHeight/2;
+            const targetLeft = itemRect.right - 60;
+            
+            // Cancelar cualquier animación previa
+            gsap.killTweensOf(avatar);
+            
+            changeAvatarState(AvatarStates.JUMPING, currentSection);
             
             gsap.to(avatar, {
-                top: targetTop,
-                left: targetLeft,
+                position: 'absolute',
+                top: targetTop + 'px',
+                left: targetLeft + 'px',
                 duration: 0.4,
                 ease: "power2.out",
                 onComplete: () => {
@@ -584,13 +489,17 @@ function setupInteractions() {
 
     document.addEventListener('mouseleave', function(e) {
         if (e.target.closest('.achievement-list li')) {
-            // Volver a la posición de walking después de un delay
+            isHangingOnAchievement = false;
+            
             setTimeout(() => {
-                if (window.avatarWalkingData && currentSection) {
-                    // Restaurar a la posición de walking
+                if (window.currentAvatarPosition && !isHangingOnAchievement) {
+                    // Cancelar animaciones previas
+                    gsap.killTweensOf(avatar);
+                    
                     gsap.to(avatar, {
-                        top: window.avatarWalkingData.baseTop,
-                        left: window.avatarWalkingData.currentLeft + 'px',
+                        position: 'absolute',
+                        top: window.currentAvatarPosition.top + 'px',
+                        left: window.currentAvatarPosition.left + 'px',
                         duration: 0.5,
                         ease: "power2.out",
                         onComplete: () => {
@@ -634,53 +543,46 @@ function setupInteractions() {
     }, 3000);
 }
 
-function returnToWalkingPosition() {
-    if (window.avatarWalkingData && currentSection) {
-        gsap.to(avatar, {
-            top: window.avatarWalkingData.baseTop,
-            left: window.avatarWalkingData.currentLeft + 'px',
-            duration: 0.6,
-            ease: "power2.out",
-            onComplete: () => {
-                changeAvatarState(AvatarStates.IDLE, currentSection);
-            }
-        });
-    }
-}
-
 function handleTechTagClick(tag) {
     const techName = tag.textContent;
     const tagRect = tag.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const contentBox = tag.closest('.content-box');
     
-    // Calcular posición más precisa
+    // Calcular posición absoluta del tag
+    const tagAbsoluteTop = tagRect.top + scrollTop;
+    const avatarHeight = 120;
+    
     let avatarTop, avatarLeft, direction;
     
-    // Posición vertical: un poco arriba del tech tag
-    avatarTop = (tagRect.top - 80) + 'px';
+    // Posicionar avatar apuntando al tag
+    avatarTop = tagAbsoluteTop - avatarHeight/2 + 15; // Ajuste para centrar mejor
     
-    // Determinar dirección y posición horizontal según ubicación del content-box
     if (contentBox.classList.contains('left-content')) {
-        // Content-box a la izquierda, avatar mira hacia la derecha (hacia los tags)
-        avatarLeft = (tagRect.left - 100) + 'px';
+        avatarLeft = tagRect.left - 110;
         direction = 'right';
     } else if (contentBox.classList.contains('right-content')) {
-        // Content-box a la derecha, avatar mira hacia la izquierda (hacia los tags)
-        avatarLeft = (tagRect.right + 50) + 'px';
+        avatarLeft = tagRect.right + 10;
         direction = 'left';
     } else {
-        // Content centrado
-        avatarLeft = (tagRect.left - 80) + 'px';
+        avatarLeft = tagRect.left - 110;
         direction = 'right';
     }
     
-    // Animar avatar al tech tag
+    // Cancelar cualquier animación previa
+    gsap.killTweensOf(avatar);
+
+    // Primero saltar al tag
+    changeAvatarState(AvatarStates.JUMPING, currentSection);
+    
     gsap.to(avatar, {
-        top: avatarTop,
-        left: avatarLeft,
+        position: 'absolute',
+        top: avatarTop + 'px',
+        left: avatarLeft + 'px',
         duration: 0.6,
         ease: "power2.out",
         onComplete: () => {
+            // Cambiar a pointing
             changeAvatarStateWithDirection(AvatarStates.IDLE, direction);
             updateTooltipWithBubble(techName, getTechDescription(techName));
         }
@@ -688,16 +590,8 @@ function handleTechTagClick(tag) {
     
     // Efecto visual del tag
     gsap.timeline()
-        .to(tag, {
-            scale: 1.15,
-            duration: 0.2,
-            ease: "power2.out"
-        })
-        .to(tag, {
-            scale: 1,
-            duration: 0.3,
-            ease: "back.out(1.7)"
-        });
+        .to(tag, { scale: 1.15, duration: 0.2 })
+        .to(tag, { scale: 1, duration: 0.3, ease: "back.out(1.7)" });
 }
 
 function getTechDescription(techName) {
@@ -733,15 +627,28 @@ function updateTooltipWithBubble(title, description) {
                 ease: "power2.out"
             });
             
-            // Auto-ocultar y retornar a posición después de 4 segundos
+            // Auto-ocultar después de 4 segundos
             gsap.to(tooltip, {
                 opacity: 0,
                 duration: 0.3,
                 delay: 4,
                 ease: "power2.in",
                 onComplete: () => {
-                    // Retornar a posición de walking
-                    setTimeout(returnToWalkingPosition, 500);
+                    // Retornar a posición después del fade out
+                    setTimeout(() => {
+                        if (window.currentAvatarPosition) {
+                            gsap.to(avatar, {
+                                position: 'absolute',
+                                top: window.currentAvatarPosition.top + 'px',
+                                left: window.currentAvatarPosition.left + 'px',
+                                duration: 0.5,
+                                ease: "power2.out",
+                                onComplete: () => {
+                                    changeAvatarState(AvatarStates.IDLE, currentSection);
+                                }
+                            });
+                        }
+                    }, 500);
                 }
             });
         }
