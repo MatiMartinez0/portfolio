@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi recorrido por el desarrollo</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <link rel="stylesheet" href="/portfolio/CSS/web-informatica.css">
+    <link rel="stylesheet" href="../CSS/web-informatica.css">
 </head>
 <body>
     <!-- Navegación -->
@@ -16,54 +14,52 @@
             <div class="theme-toggle" onclick="toggleTheme()"></div>
         </div>
     </nav>
-
-    <!-- Avatar del desarrollador -->
-    <div class="avatar" id="gameAvatar">
-        <div class="avatar-tooltip" id="avatarTooltip">Explorando...</div>
-    </div>
     
     <!-- Contenedor principal del timeline -->
     <div class="timeline-container">
+        <!-- Línea central del timeline (decorativa) -->
+        <div class="timeline-line"></div>
         
         <!-- INTRO SECTION -->
-        <section class="timeline-section intro-section" id="intro" data-section="intro">
-            <div class="content-box center-content">
+        <section class="timeline-section intro-section" data-section="intro">
+            <div class="content-box">
                 <h1>Mi recorrido por el desarrollo</h1>
                 <p class="subtitle">De las primeras líneas de código a proyectos full-stack</p>
                 <div class="scroll-indicator">
-                    <p>Scroll para explorar mi evolución</p>
+                    <p>Desliza para explorar mi evolución</p>
                     <div class="scroll-arrow">↓</div>
                 </div>
             </div>
         </section>
 
         <!-- 2021 - PRIMEROS PASOS -->
-        <section class="timeline-section year-section" id="year-2021" data-year="2021" data-section="2021">
-            <div class="year-marker" data-year="2021">
-                <div class="year-number">2021</div>
+        <section class="timeline-section" data-year="2021">
+            <div class="year-marker">
+                <span class="year-dot"></span>
+                <span class="year-label">2021</span>
             </div>
             
-            <div class="content-box left-content">
+            <div class="content-box">
                 <div class="section-header">
                     <h2>Primeros Pasos</h2>
-                    <div class="section-subtitle">El comienzo de todo</div>
+                    <p class="section-subtitle">El comienzo de todo</p>
                 </div>
                 
                 <div class="story-content">
                     <p>En 4to año de secundaria descubrí la programación con <span class="tech-highlight">PseInt</span>. Luego me adentré en el desarrollo web con <span class="tech-highlight">HTML</span>, <span class="tech-highlight">CSS</span> y mis primeros experimentos con <span class="tech-highlight">JavaScript</span>. Era fascinante ver cómo unas líneas de código se convertían en páginas web interactivas.</p>
                 </div>
                 
-                <div class="technologies-learned">
+                <div class="section-group">
                     <h3>Tecnologías Aprendidas</h3>
                     <div class="tech-tags">
-                        <span class="tech-tag" data-tech="pseint">PseInt</span>
-                        <span class="tech-tag" data-tech="html">HTML</span>
-                        <span class="tech-tag" data-tech="css">CSS</span>
-                        <span class="tech-tag" data-tech="javascript">JavaScript</span>
+                        <span class="tech-tag">PseInt</span>
+                        <span class="tech-tag">HTML</span>
+                        <span class="tech-tag">CSS</span>
+                        <span class="tech-tag">JavaScript</span>
                     </div>
                 </div>
                 
-                <div class="achievements">
+                <div class="section-group">
                     <h3>Logros Destacados</h3>
                     <ul class="achievement-list">
                         <li>Primera página web personal</li>
@@ -75,32 +71,33 @@
         </section>
 
         <!-- 2022 - ENTRANDO A JAVA -->
-        <section class="timeline-section year-section" id="year-2022" data-year="2022" data-section="2022">
-            <div class="year-marker" data-year="2022">
-                <div class="year-number">2022</div>
+        <section class="timeline-section" data-year="2022">
+            <div class="year-marker">
+                <span class="year-dot"></span>
+                <span class="year-label">2022</span>
             </div>
             
-            <div class="content-box right-content">
+            <div class="content-box">
                 <div class="section-header">
                     <h2>Entrando a Java</h2>
-                    <div class="section-subtitle">Descubriendo la programación orientada a objetos</div>
+                    <p class="section-subtitle">Descubriendo la programación orientada a objetos</p>
                 </div>
                 
                 <div class="story-content">
                     <p>En 5to año profundicé con <span class="tech-highlight">Java</span> usando <span class="tech-highlight">NetBeans</span>. Creé mis primeras aplicaciones con interfaz gráfica: calculadoras, sistemas de promedios y pequeños programas que resolvían problemas cotidianos. La programación orientada a objetos se volvió mi nuevo mundo.</p>
                 </div>
                 
-                <div class="technologies-learned">
+                <div class="section-group">
                     <h3>Tecnologías Aprendidas</h3>
                     <div class="tech-tags">
-                        <span class="tech-tag" data-tech="java">Java</span>
-                        <span class="tech-tag" data-tech="netbeans">NetBeans</span>
-                        <span class="tech-tag" data-tech="swing">Swing</span>
-                        <span class="tech-tag" data-tech="poo">POO</span>
+                        <span class="tech-tag">Java</span>
+                        <span class="tech-tag">NetBeans</span>
+                        <span class="tech-tag">Swing</span>
+                        <span class="tech-tag">POO</span>
                     </div>
                 </div>
                 
-                <div class="achievements">
+                <div class="section-group">
                     <h3>Logros Destacados</h3>
                     <ul class="achievement-list">
                         <li>Primera aplicación de escritorio funcional</li>
@@ -112,32 +109,33 @@
         </section>
 
         <!-- 2023 - PROFUNDIZACIÓN -->
-        <section class="timeline-section year-section" id="year-2023" data-year="2023" data-section="2023">
-            <div class="year-marker" data-year="2023">
-                <div class="year-number">2023</div>
+        <section class="timeline-section" data-year="2023">
+            <div class="year-marker">
+                <span class="year-dot"></span>
+                <span class="year-label">2023</span>
             </div>
             
-            <div class="content-box left-content">
+            <div class="content-box">
                 <div class="section-header">
                     <h2>Profundización</h2>
-                    <div class="section-subtitle">Consolidando conocimientos y explorando CMS</div>
+                    <p class="section-subtitle">Consolidando conocimientos y explorando CMS</p>
                 </div>
                 
                 <div class="story-content">
                     <p>Realicé un curso completo de <span class="tech-highlight">WordPress</span> y profundicé en las tecnologías que ya conocía. Esta etapa fue crucial para consolidar mis conocimientos y prepararme para proyectos más ambiciosos. Aprendí sobre CMS, personalización de temas con <span class="tech-highlight">Elementor</span> y gestión de hosting.</p>
                 </div>
                 
-                <div class="technologies-learned">
+                <div class="section-group">
                     <h3>Tecnologías Aprendidas</h3>
                     <div class="tech-tags">
-                        <span class="tech-tag" data-tech="wordpress">WordPress</span>
-                        <span class="tech-tag" data-tech="css-advanced">CSS Avanzado</span>
-                        <span class="tech-tag" data-tech="elementor">Elementor</span>
-                        <span class="tech-tag" data-tech="hosting">Hosting</span>
+                        <span class="tech-tag">WordPress</span>
+                        <span class="tech-tag">CSS Avanzado</span>
+                        <span class="tech-tag">Elementor</span>
+                        <span class="tech-tag">Hosting</span>
                     </div>
                 </div>
                 
-                <div class="achievements">
+                <div class="section-group">
                     <h3>Logros Destacados</h3>
                     <ul class="achievement-list">
                         <li>Dominio de WordPress y CMS</li>
@@ -149,37 +147,38 @@
         </section>
 
         <!-- 2024 - PRIMER TRABAJO & UNIVERSIDAD -->
-        <section class="timeline-section year-section featured-year" id="year-2024" data-year="2024" data-section="2024">
-            <div class="year-marker" data-year="2024">
-                <div class="year-number">2024</div>
+        <section class="timeline-section featured" data-year="2024">
+            <div class="year-marker">
+                <span class="year-dot"></span>
+                <span class="year-label">2024</span>
             </div>
             
-            <div class="content-box right-content">
+            <div class="content-box">
                 <div class="section-header">
                     <h2>Primer Trabajo & Universidad</h2>
-                    <div class="section-subtitle">El gran salto profesional</div>
+                    <p class="section-subtitle">El gran salto profesional</p>
                 </div>
                 
                 <div class="story-content">
                     <p>Comencé a trabajar en <strong>Zerpens</strong> desarrollando sitios web corporativos, creé una tienda online para un amigo, inicié mis estudios universitarios en Informática y desarrollo de Software y desarrollé mi proyecto más ambicioso hasta el momento: un e-commerce con IA integrada que genera bocetos de páginas web.</p>
                 </div>
                 
-                <div class="technologies-learned">
+                <div class="section-group">
                     <h3>Tecnologías Aprendidas</h3>
                     <div class="tech-tags">
-                        <span class="tech-tag" data-tech="wordpress-pro">WordPress Pro</span>
-                        <span class="tech-tag" data-tech="elementor-pro">Elementor Pro</span>
-                        <span class="tech-tag" data-tech="cpp">C++</span>
-                        <span class="tech-tag" data-tech="java-advanced">Java Advanced</span>
-                        <span class="tech-tag" data-tech="nodejs">Node.js</span>
-                        <span class="tech-tag" data-tech="express">Express</span>
-                        <span class="tech-tag" data-tech="mysql">MySQL</span>
-                        <span class="tech-tag" data-tech="qwen-api">Qwen API</span>
-                        <span class="tech-tag" data-tech="postman">Postman</span>
+                        <span class="tech-tag">WordPress Pro</span>
+                        <span class="tech-tag">Elementor Pro</span>
+                        <span class="tech-tag">C++</span>
+                        <span class="tech-tag">Java Advanced</span>
+                        <span class="tech-tag">Node.js</span>
+                        <span class="tech-tag">Express</span>
+                        <span class="tech-tag">MySQL</span>
+                        <span class="tech-tag">Qwen API</span>
+                        <span class="tech-tag">Postman</span>
                     </div>
                 </div>
                 
-                <div class="achievements">
+                <div class="section-group">
                     <h3>Logros Destacados</h3>
                     <ul class="achievement-list">
                         <li>Sitio corporativo con +20 páginas optimizadas para Zerpens</li>
@@ -192,35 +191,36 @@
         </section>
 
         <!-- 2025 - PRESENTE & FUTURO -->
-        <section class="timeline-section year-section current-year" id="year-2025" data-year="2025" data-section="2025">
-            <div class="year-marker current" data-year="2025">
-                <div class="year-number">2025</div>
-                <div class="current-indicator">Actual</div>
+        <section class="timeline-section current" data-year="2025">
+            <div class="year-marker">
+                <span class="year-dot"></span>
+                <span class="year-label">2025</span>
+                <span class="current-badge">Actual</span>
             </div>
             
-            <div class="content-box left-content">
+            <div class="content-box">
                 <div class="section-header">
                     <h2>Presente & Futuro</h2>
-                    <div class="section-subtitle">La aventura continúa</div>
+                    <p class="section-subtitle">La aventura continúa</p>
                 </div>
                 
                 <div class="story-content">
                     <p>Actualmente me enfoco en proyectos freelance y continúo mis estudios universitarios. Busco constantemente nuevos desafíos y oportunidades para aplicar mis conocimientos en desarrollo web full-stack. Mi próximo objetivo: dominar React, TypeScript, Python y Flutter.</p>
                 </div>
                 
-                <div class="technologies-learned">
+                <div class="section-group">
                     <h3>Stack Actual</h3>
                     <div class="tech-tags">
-                        <span class="tech-tag" data-tech="html-css-js">HTML/CSS/JS</span>
-                        <span class="tech-tag" data-tech="nodejs">Node.js</span>
-                        <span class="tech-tag" data-tech="mysql">MySQL</span>
-                        <span class="tech-tag" data-tech="xampp">XAMPP</span>
-                        <span class="tech-tag" data-tech="postman">Postman</span>
-                        <span class="tech-tag" data-tech="git">Git</span>
+                        <span class="tech-tag">HTML/CSS/JS</span>
+                        <span class="tech-tag">Node.js</span>
+                        <span class="tech-tag">MySQL</span>
+                        <span class="tech-tag">XAMPP</span>
+                        <span class="tech-tag">Postman</span>
+                        <span class="tech-tag">Git</span>
                     </div>
                 </div>
                 
-                <div class="achievements">
+                <div class="section-group">
                     <h3>Próximos Objetivos</h3>
                     <ul class="achievement-list">
                         <li>Dominar React para interfaces modernas</li>
@@ -232,6 +232,7 @@
             </div>
         </section>
     </div>
+
+    <script src="../js/web-informatica.js"></script>
 </body>
-<script src="/portfolio/js/web.informatica.js"></script>
 </html>

@@ -1,260 +1,173 @@
-    // Registrar ScrollTrigger
-    gsap.registerPlugin(ScrollTrigger);
+// Inicialización cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Timeline inicializando...');
+    initializeTimeline();
+    loadSavedTheme();
+});
 
-    // Variables globales
-    let avatar;
-    let avatarSprite;
-    let tooltip;
-    let currentSection = null;
-    let isHangingOnAchievement = false;
+// Función principal de inicialización
+function initializeTimeline() {
+    // Animar entrada de las cajas
+    animateContentBoxes();
+    
+    // Configurar efectos hover
+    setupHoverEffects();
+    
+    console.log('Timeline inicializado correctamente');
+}
 
-    const AVATAR_CONFIG = {
-        size: { width: 120, height: 120 },
-        offset: { x: 60, y: 60 },
-        baseY: window.innerHeight * 0.3
+// Animar cajas cuando entran en viewport
+// Animar cajas cuando entran en viewport
+function animateContentBoxes() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '-10% 0px -10% 0px'
     };
-
-    // Estados del avatar simplificados
-    const AvatarStates = {
-        IDLE: 'pointing',
-        WALKING: 'walking',
-        JUMPING: 'jumping',
-        HANGING: 'hanging',
-        POINTING: 'pointing'
-    };
-
-    // Configuración de sprites
-    const spriteImages = {
-        pointing_right: '/portfolio/assets/avatar-pointing-right.png',
-        pointing_left: '/portfolio/assets/avatar-pointing-left.png',
-        walking_right: '/portfolio/assets/avatar-walking-right.png',
-        walking_left: '/portfolio/assets/avatar-walking-left.png',
-        jumping_right: '/portfolio/assets/avatar-jumping-right.png',
-        jumping_left: '/portfolio/assets/avatar-jumping-left.png',
-        hanging_right: '/portfolio/assets/avatar-hanging-right.png',
-        hanging_left: '/portfolio/assets/avatar-hanging-left.png',
-        default: '/portfolio/assets/avatar-walking-right.png'
-    };
-
-    // Función principal para cambiar el estado del avatar
-    function changeAvatarState(state, direction = 'right') {
-        if (!avatarSprite) return;
-        
-        const spriteKey = `${state}_${direction}`;
-        const spriteUrl = spriteImages[spriteKey] || spriteImages.default;
-        
-        // Limpiar estados anteriores
-        Object.values(AvatarStates).forEach(s => {
-            avatarSprite.classList.remove(s);
-        });
-        
-        avatarSprite.classList.add(state);
-        avatarSprite.style.backgroundImage = `url(${spriteUrl})`;
-    }
-
-    // Inicializar ScrollTrigger
-    function initializeGSAP() {
-        const sections = gsap.utils.toArray('.timeline-section');
-        
-        sections.forEach((section, index) => {
-            ScrollTrigger.create({
-                trigger: section,
-                start: 'top center',
-                end: 'bottom center',
-                onEnter: () => handleSectionTransition(section, 'down'),
-                onEnterBack: () => handleSectionTransition(section, 'up'),
-                markers: false
-            });
-        });
-    }
-
-    // Manejar transiciones entre secciones
-    function handleSectionTransition(section, direction) {
-        if (!section || !avatar) return;
-        
-        currentSection = section;
-        
-        const contentBox = section.querySelector('.content-box');
-        if (!contentBox) return;
-        
-        const rect = contentBox.getBoundingClientRect();
-        const isLeftContent = contentBox.classList.contains('left-content');
-        const isCenterContent = contentBox.classList.contains('center-content');
-        
-        // Calcular posición objetivo
-        let targetX, targetY;
-        
-        if (isCenterContent) {
-            // Para la intro, posicionar a la derecha
-            targetX = rect.right + 100;
-            targetY = rect.top + (rect.height / 2) - 60;
-        } else if (isLeftContent) {
-            // Contenido a la izquierda -> avatar a la derecha
-            targetX = rect.right + 100;
-            targetY = rect.top + (rect.height * 0.3);
-        } else {
-            // Contenido a la derecha -> avatar a la izquierda
-            targetX = rect.left - 220;
-            targetY = rect.top + (rect.height * 0.3);
-        }
-        
-        const spriteDirection = isLeftContent ? 'right' : 'left';
-        
-        gsap.timeline()
-            .to(avatar, {
-                x: targetX,
-                y: targetY,
-                duration: 0.8,
-                ease: "power2.inOut",
-                onStart: () => {
-                    changeAvatarState(AvatarStates.JUMPING, spriteDirection);
-                    updateTooltip('¡Saltando!');
-                },
-                onComplete: () => {
-                    changeAvatarState(AvatarStates.IDLE, spriteDirection);
-                    updateTooltip(`Sección ${section.dataset.section}`);
+    
+    const yearObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const yearMarker = entry.target;
+                console.log('Año visible:', yearMarker);
+                
+                // Mostrar el año con la transformación correcta
+                yearMarker.style.opacity = '1';
+                yearMarker.style.transform = 'translateX(-50%) translateY(0)';
+                yearMarker.classList.add('visible');
+                
+                // Animar la caja de contenido asociada
+                const section = yearMarker.closest('.timeline-section');
+                const contentBox = section?.querySelector('.content-box');
+                
+                if (contentBox) {
+                    setTimeout(() => {
+                        contentBox.style.opacity = '1';
+                        contentBox.style.transform = 'translateY(0)';
+                        contentBox.classList.add('visible');
+                        contentBox.classList.add('animate-in');
+                        contentBox.style.pointerEvents = 'auto';
+                    }, 400);
                 }
-            });
-    }
-
-        // Configurar interacciones
-        function setupInteractions() {
-            // Tech tags
-            document.querySelectorAll('.tech-tag').forEach(tag => {
-                tag.addEventListener('click', () => handleTechClick(tag));
-            });
-            
-            // Achievements
-            document.querySelectorAll('.achievement-list li').forEach(achievement => {
-                achievement.addEventListener('mouseenter', () => handleAchievementHover(achievement, true));
-                achievement.addEventListener('mouseleave', () => handleAchievementHover(achievement, false));
-            });
-        }
-
-    // Manejar click en tech tags
-    function handleTechClick(tag) {
-        if (!tag || !avatar) return;
-        
-        const rect = tag.getBoundingClientRect();
-        const currentAvatar = avatar.getBoundingClientRect();
-        
-        // Determinar dirección según posición relativa
-        const isLeft = currentAvatar.left > rect.left;
-        
-        // Guardar posición antes del click
-        const beforeX = gsap.getProperty(avatar, "x");
-        const beforeY = gsap.getProperty(avatar, "y");
-        
-        gsap.timeline()
-            .to(avatar, {
-                x: isLeft ? rect.left - 150 : rect.right + 30,
-                y: rect.top + (rect.height / 2) - 60,
-                duration: 0.6,
-                ease: "power2.out",
-                onStart: () => {
-                    changeAvatarState(AvatarStates.WALKING, isLeft ? 'left' : 'right');
-                    updateTooltip(`Explorando ${tag.textContent}`);
-                },
-                onComplete: () => changeAvatarState(AvatarStates.POINTING, isLeft ? 'left' : 'right')
-            })
-            .to(avatar, {
-                x: beforeX,
-                y: beforeY,
-                duration: 0.6,
-                delay: 1.5,
-                ease: "power2.inOut",
-                onStart: () => changeAvatarState(AvatarStates.WALKING, isLeft ? 'right' : 'left'),
-                onComplete: () => {
-                    changeAvatarState(AvatarStates.IDLE, isLeft ? 'right' : 'left');
-                    if (currentSection) {
-                        updateTooltip(`Sección ${currentSection.dataset.section}`);
-                    }
-                }
-            });
-        
-        // Marcar como recolectado
-        tag.classList.add('collected');
-    }
-
-    function handleAchievementHover(achievement, isEntering) {
-        if (!achievement || !avatar) return;
-        
-        if (isEntering && !isHangingOnAchievement) {
-            const rect = achievement.getBoundingClientRect();
-            const currentAvatar = avatar.getBoundingClientRect();
-            const isLeft = currentAvatar.left > rect.left;
-            
-            isHangingOnAchievement = true;
-            
-            gsap.to(avatar, {
-                x: rect.right + 20,
-                y: rect.top - 80,
-                duration: 0.4,
-                ease: "power2.out",
-                onStart: () => {
-                    changeAvatarState(AvatarStates.WALKING, 'right');
-                    updateTooltip('¡Colgándome!');
-                },
-                onComplete: () => changeAvatarState(AvatarStates.HANGING, 'right')
-            });
-        } else if (!isEntering && isHangingOnAchievement) {
-            isHangingOnAchievement = false;
-            if (currentSection) {
-                handleSectionTransition(currentSection, 'none');
+                
+                // Dejar de observar este marcador
+                yearObserver.unobserve(yearMarker);
             }
-        }
-    }
-
-    // inicialización
-    document.addEventListener('DOMContentLoaded', () => {
-        // Inicializar elementos
-        avatar = document.getElementById('gameAvatar');
-        tooltip = document.getElementById('avatarTooltip');
-        
-        // Crear y configurar sprite
-        avatarSprite = document.createElement('div');
-        avatarSprite.classList.add('avatar-sprite');
-        avatar.insertBefore(avatarSprite, tooltip);
-        
-        // Configuración inicial del avatar
-        const introSection = document.querySelector('.intro-section');
-        const introBox = introSection.querySelector('.content-box');
-        const rect = introBox.getBoundingClientRect();
-        
-        // Posicionar avatar inicialmente
-        gsap.set(avatar, {
-            position: 'fixed',
-            x: rect.right + 100,
-            y: rect.top + (rect.height / 2) - 60,
-            xPercent: 0,
-            yPercent: 0
         });
-        
-        // Establecer estado inicial
-        changeAvatarState(AvatarStates.IDLE, 'right');
-        
-        // Inicializar sistemas
-        initializeGSAP();
-        setupInteractions();
-        
-        // Activar primera sección después de un pequeño delay
-        setTimeout(() => {
-            const firstSection = document.querySelector('.intro-section');
-            if (firstSection) {
-                handleSectionTransition(firstSection, 'down');
+    }, observerOptions);
+    
+    // Observador separado para cajas de contenido
+    const contentObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !entry.target.closest('.timeline-section')?.querySelector('.year-marker')) {
+                console.log('Contenido sin año visible:', entry.target);
+                entry.target.classList.add('visible');
+                entry.target.classList.add('animate-in');
+                contentObserver.unobserve(entry.target);
             }
-        }, 100);
+        });
+    }, observerOptions);
+    
+    // Mostrar la intro inmediatamente
+    const introBox = document.querySelector('.intro-section .content-box');
+    if (introBox) {
+        introBox.style.opacity = '1';
+        introBox.style.transform = 'translateY(0)';
+        introBox.classList.add('visible');
+        introBox.classList.add('animate-in');
+        introBox.style.pointerEvents = 'auto';
+        console.log('Intro mostrada');
+    }
+    
+    // Observar todos los marcadores de año
+    const yearMarkers = document.querySelectorAll('.year-marker');
+    console.log(`Marcadores de año encontrados: ${yearMarkers.length}`);
+    yearMarkers.forEach(marker => {
+        yearObserver.observe(marker);
+        console.log('Marcador en observación:', marker.querySelector('.year-label')?.textContent);
     });
+    
+    // Observar las cajas de contenido sin marcador de año
+    const contentBoxes = document.querySelectorAll('.content-box:not(.intro-section .content-box)');
+    contentBoxes.forEach(box => {
+        if (!box.closest('.timeline-section')?.querySelector('.year-marker')) {
+            contentObserver.observe(box);
+        }
+    });
+}
 
-    // Función para actualizar tooltip
-    function updateTooltip(text) {
-        if (!tooltip) return;
+// Configurar efectos hover
+function setupHoverEffects() {
+    // Tech tags con efecto de colección
+    const techTags = document.querySelectorAll('.tech-tag');
+    console.log(`Tech tags encontrados: ${techTags.length}`);
+    
+    techTags.forEach(tag => {
+        tag.style.cursor = 'pointer';
         
-        tooltip.textContent = text;
-        tooltip.style.opacity = '1';
+        tag.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.classList.toggle('collected');
+            console.log(`Tech tag clickeado: ${this.textContent}`);
+            
+            // Animación de confirmación
+            const originalTransform = this.style.transform;
+            this.style.transform = 'scale(1.15) translateY(-2px)';
+            
+            setTimeout(() => {
+                this.style.transform = originalTransform;
+            }, 200);
+        });
+    });
+    
+    // Achievements con efecto de expansión
+    const achievements = document.querySelectorAll('.achievement-list li');
+    console.log(`Achievements encontrados: ${achievements.length}`);
+    
+    achievements.forEach(achievement => {
+        achievement.addEventListener('mouseenter', function() {
+            this.style.paddingLeft = '1.5rem';
+        });
         
-        // Ocultar después de 2 segundos
-        setTimeout(() => {
-            tooltip.style.opacity = '0';
-        }, 2000);
-    }
+        achievement.addEventListener('mouseleave', function() {
+            this.style.paddingLeft = '1rem';
+        });
+    });
+}
+
+// Toggle de tema
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    console.log(`Tema cambiado a: ${newTheme}`);
+}
+
+// Cargar tema guardado
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    console.log(`Tema cargado: ${savedTheme}`);
+}
+
+// Prevenir transiciones durante resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+    document.body.classList.add('resize-animation-stopper');
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        document.body.classList.remove('resize-animation-stopper');
+    }, 400);
+});
+
+// Debug helper
+window.debugTimeline = function() {
+    console.log('=== DEBUG TIMELINE ===');
+    console.log('Content boxes:', document.querySelectorAll('.content-box').length);
+    console.log('Visible boxes:', document.querySelectorAll('.content-box.visible').length);
+    console.log('Year markers:', document.querySelectorAll('.year-marker').length);
+    console.log('Visible markers:', document.querySelectorAll('.year-marker.visible').length);
+};
